@@ -1,23 +1,38 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Box, Typography, Button, TextField } from '@mui/material';
+import { Box, Typography, Button, TextField, Avatar } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import * as THREE from 'three';
 
-// Glassmorphism card style
 const glassStyle = {
-  background: 'rgba(255, 255, 255, 0.08)',
+  background: 'linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.1))',
   backdropFilter: 'blur(14px)',
   WebkitBackdropFilter: 'blur(14px)',
-  borderRadius: '18px',
+  borderRadius: '20px',
   border: '1px solid rgba(255,255,255,0.2)',
-  boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
+  boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
   color: '#fff',
   p: 3,
   mb: 3,
-  fontFamily: "'Georgia', serif",
-  fontWeight: '500',
-  letterSpacing: '0.02em',
+  transition: 'transform 0.3s, box-shadow 0.3s',
+  '&:hover': {
+    transform: 'translateY(-5px)',
+    boxShadow: '0 12px 60px rgba(0,0,0,0.7)',
+  },
+};
+
+// Mapping tip keywords to images
+const tipImages = {
+  water: '/images/water.png',
+  walk: '/images/walk.png',
+  nap: '/images/nap.png',
+  meditation: '/images/meditation.png',
+  relax: '/images/relax.png',
+  calendar: '/images/calendar.png',
+  focus: '/images/focus.png',
+  music: '/images/music.png',
+  eye: '/images/eye.png',
+  default: '/images/tip.png',
 };
 
 const Recommendations = () => {
@@ -43,10 +58,10 @@ const Recommendations = () => {
     if (!email) navigate('/LoginPage');
   }, [email, navigate]);
 
-  // ==================== Three.js Moving Stars ====================
+  // ==================== Three.js Star Background ====================
   useEffect(() => {
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0a2a); // dark night
+    scene.background = new THREE.Color(0x0a0a2a);
 
     const camera = new THREE.PerspectiveCamera(
       75,
@@ -62,10 +77,10 @@ const Recommendations = () => {
 
     const geometry = new THREE.BufferGeometry();
     const stars = [];
-    for (let i = 0; i < 1000; i++) {
-      stars.push((Math.random() - 0.5) * 600); // x
-      stars.push((Math.random() - 0.5) * 600); // y
-      stars.push((Math.random() - 0.5) * 600); // z
+    for (let i = 0; i < 1200; i++) {
+      stars.push((Math.random() - 0.5) * 600);
+      stars.push((Math.random() - 0.5) * 600);
+      stars.push((Math.random() - 0.5) * 600);
     }
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(stars, 3));
 
@@ -87,7 +102,6 @@ const Recommendations = () => {
     };
   }, []);
 
-  // ==================== Fetch Recommendations ====================
   const fetchTips = async (date) => {
     if (!email) return;
 
@@ -115,27 +129,33 @@ const Recommendations = () => {
       let t = [];
       if (status === 'low') {
         t = [
-          'Maintain focus by taking short breaks every hour.',
-          'Stay hydrated and stretch lightly every 2 hours.',
-          'Plan your tasks for tomorrow to avoid stress.',
+          { text: 'Maintain focus by taking short breaks every hour.', keyword: 'focus' },
+          { text: 'Stay hydrated and stretch lightly every 2 hours.', keyword: 'water' },
+          { text: 'Plan your tasks for tomorrow to avoid stress.', keyword: 'calendar' },
         ];
       } else if (status === 'medium') {
         t = [
-          'Take a 10-minute walk.',
-          'Practice deep breathing or meditation.',
-          'Listen to relaxing music for 5–10 minutes.',
+          { text: 'Take a 10-minute walk.', keyword: 'walk' },
+          { text: 'Practice deep breathing or meditation.', keyword: 'meditation' },
+          { text: 'Listen to relaxing music for 5–10 minutes.', keyword: 'music' },
         ];
       } else if (status === 'high') {
         t = [
-          'Take a 15-minute power nap.',
-          'Practice guided deep breathing.',
-          'Avoid heavy tasks, do something relaxing first.',
+          { text: 'Take a 15-minute power nap.', keyword: 'nap' },
+          { text: 'Practice guided deep breathing.', keyword: 'meditation' },
+          { text: 'Avoid heavy tasks, do something relaxing first.', keyword: 'relax' },
         ];
       } else {
-        t = ['Keep monitoring your mental balance regularly.'];
+        t = [{ text: 'Keep monitoring your mental balance regularly.', keyword: 'eye' }];
       }
 
-      setTips(t);
+      // Add image property
+      const tipsWithImages = t.map(tip => ({
+        ...tip,
+        image: tipImages[tip.keyword] || tipImages.default
+      }));
+
+      setTips(tipsWithImages);
       setMessage('');
     } catch (err) {
       console.error(err);
@@ -147,31 +167,25 @@ const Recommendations = () => {
   };
 
   useEffect(() => {
-    if (email) fetchTips(today);
+    if (email) fetchTips(today); // show today by default
   }, [email]);
 
   return (
-    <Box sx={{ position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
+    <Box sx={{ position: 'relative', minHeight: '100vh', overflow: 'hidden', p: 4 }}>
       {/* Stars background */}
       <Box ref={mountRef} sx={{ position: 'fixed', inset: 0, zIndex: 0 }} />
 
       {/* Content */}
-      <Box sx={{ position: 'relative', zIndex: 1, p: 4 }}>
-        <Typography variant="h4" fontWeight="bold" mb={3} color="#fff">
-          Daily Recommendations
+      <Box sx={{ position: 'relative', zIndex: 1, maxWidth: '900px', mx: 'auto' }}>
+        <Typography variant="h3" fontWeight="bold" mb={3} color="#fff" textAlign="center">
+          🌟 Daily Recommendations
         </Typography>
 
         {/* Date Filters */}
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-          <Button variant="contained" onClick={() => fetchTips(today)}>
-            Today
-          </Button>
-          <Button variant="contained" onClick={() => fetchTips(yesterday)}>
-            Yesterday
-          </Button>
-          <Button variant="contained" onClick={() => fetchTips(tomorrow)}>
-            Tomorrow
-          </Button>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, justifyContent: 'center', mb: 4 }}>
+          <Button variant="contained" color="primary" onClick={() => fetchTips(today)}>Today</Button>
+          <Button variant="contained" color="secondary" onClick={() => fetchTips(yesterday)}>Yesterday</Button>
+          <Button variant="contained" color="success" onClick={() => fetchTips(tomorrow)}>Tomorrow</Button>
           <TextField
             type="date"
             size="small"
@@ -189,31 +203,37 @@ const Recommendations = () => {
         </Box>
 
         {/* Message */}
-        {message && <Typography color="error" mb={2}>{message}</Typography>}
+        {message && <Typography color="error" mb={2} textAlign="center">{message}</Typography>}
 
         {/* Glass card */}
         {!message && loadScore !== null && (
-          <Box sx={glassStyle}>
-            <Typography variant="body1" mb={1}>
-              <strong>Date:</strong> {dateStr}
-            </Typography>
-            <Typography variant="body1" mb={1}>
-              <strong>Load Score:</strong> {loadScore}
+          <Box sx={{ ...glassStyle }}>
+            <Typography variant="body1" mb={1}><strong>Date:</strong> {dateStr}</Typography>
+            <Typography variant="body1" mb={2}><strong>Load Score:</strong> 
+              <span style={{
+                color:
+                  loadScore < 40 ? '#4ade80' :
+                  loadScore < 70 ? '#facc15' :
+                  '#f87171',
+                fontWeight: 'bold',
+                marginLeft: '6px'
+              }}>
+                {loadScore}
+              </span>
             </Typography>
 
-            <Typography variant="h6" mt={2} mb={1}>
-              Proactive & Preventive Tips:
-            </Typography>
+            <Typography variant="h6" mb={2}>💡 Tips to Improve Mental Balance:</Typography>
             {tips.map((tip, index) => (
-              <Typography key={index} sx={{ mb: 0.5 }}>
-                • {tip}
-              </Typography>
+              <Box key={index} sx={{ display: 'flex', alignItems: 'center', mb: 1, gap: 1 }}>
+                <Avatar src={tip.image} sx={{ width: 32, height: 32 }} />
+                <Typography>{tip.text}</Typography>
+              </Box>
             ))}
           </Box>
         )}
 
         {!tips.length && !message && (
-          <Typography color="#fff">No recommendations available</Typography>
+          <Typography color="#fff" textAlign="center">No recommendations available</Typography>
         )}
       </Box>
     </Box>
