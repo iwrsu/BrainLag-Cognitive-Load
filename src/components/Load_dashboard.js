@@ -4,10 +4,34 @@ import * as THREE from 'three';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const dashboardOptions = [
-  { title: 'Mental Balance', description: 'Check your cognitive load and mental balance', color: '#7c5aff', link: '/MentalBalance' },
-  { title: 'Track Daily Mindness', description: 'Record daily cognitive states', color: '#ff5c5c', link: '/TrackDaily' },
-  { title: 'View Charts', description: 'Visualize your trends over time', color: '#82ce91ff', link: '/Charts' },
-  { title: 'Recommendations', description: 'Get suggestions based on your score', color: '#516dcaff', link: '/Recommendations' },
+  {
+    title: 'Mental Balance',
+    description: 'Check your cognitive load and emotional stability',
+    color: '#7c5aff',
+    link: '/MentalBalance',
+    image: 'https://cdn-icons-png.flaticon.com/512/4320/4320337.png',
+  },
+  {
+    title: 'Track Daily Mindfulness',
+    description: 'Record your daily mental and cognitive states',
+    color: '#ff5c5c',
+    link: '/TrackDaily',
+    image: 'https://cdn-icons-png.flaticon.com/512/2920/2920277.png',
+  },
+  {
+    title: 'View Insights',
+    description: 'Visualize trends and mental patterns over time',
+    color: '#82ce91',
+    link: '/Charts',
+    image: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
+  },
+  {
+    title: 'Smart Recommendations',
+    description: 'Personalized suggestions to protect mental energy',
+    color: '#516dca',
+    link: '/Recommendations',
+    image: 'https://cdn-icons-png.flaticon.com/512/942/942748.png',
+  },
 ];
 
 const LoadDashboard = () => {
@@ -16,25 +40,25 @@ const LoadDashboard = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
 
-  // Get email
+  // ✅ Auth check + email
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const emailFromState = location.state?.email || localStorage.getItem('email');
-
     if (!token) {
       navigate('/LoginPage');
       return;
     }
 
-    setEmail(emailFromState || '');
+    // Email from login state OR fallback to localStorage
+    setEmail(location.state?.email || localStorage.getItem('email') || '');
   }, [location.state, navigate]);
 
-  // Three.js background
+  // ✅ Three.js star background
   useEffect(() => {
     if (!mountRef.current) return;
 
-    const width = mountRef.current.clientWidth;
-    const height = mountRef.current.clientHeight;
+    const mount = mountRef.current;
+    const width = mount.clientWidth;
+    const height = mount.clientHeight;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0a0a23);
@@ -44,84 +68,113 @@ const LoadDashboard = () => {
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(width, height);
-    mountRef.current.appendChild(renderer.domElement);
+    mount.appendChild(renderer.domElement);
 
-    const starCount = 1000;
+    // Stars
     const starGeometry = new THREE.BufferGeometry();
-    const starPositions = [];
-    for (let i = 0; i < starCount; i++) {
-      starPositions.push((Math.random() - 0.5) * 200);
-      starPositions.push((Math.random() - 0.5) * 200);
-      starPositions.push((Math.random() - 0.5) * 200);
+    const starVertices = [];
+    for (let i = 0; i < 1200; i++) {
+      starVertices.push((Math.random() - 0.5) * 300);
+      starVertices.push((Math.random() - 0.5) * 300);
+      starVertices.push((Math.random() - 0.5) * 300);
     }
-    starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starPositions, 3));
-    const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.5 });
+    starGeometry.setAttribute(
+      'position',
+      new THREE.Float32BufferAttribute(starVertices, 3)
+    );
+
+    const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.6 });
     const stars = new THREE.Points(starGeometry, starMaterial);
     scene.add(stars);
 
+    let animationId;
     const animate = () => {
-      requestAnimationFrame(animate);
-      stars.rotation.y += 0.0005;
-      stars.rotation.x += 0.0002;
+      animationId = requestAnimationFrame(animate);
+      stars.rotation.y += 0.0004;
       renderer.render(scene, camera);
     };
     animate();
 
+    const handleResize = () => {
+      camera.aspect = mount.clientWidth / mount.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(mount.clientWidth, mount.clientHeight);
+    };
+    window.addEventListener('resize', handleResize);
+
     return () => {
-      if (mountRef.current && mountRef.current.contains(renderer.domElement)) {
-        mountRef.current.removeChild(renderer.domElement);
+      cancelAnimationFrame(animationId);
+      starGeometry.dispose();
+      starMaterial.dispose();
+      renderer.dispose();
+      if (mount && renderer.domElement && mount.contains(renderer.domElement)) {
+        mount.removeChild(renderer.domElement);
       }
+      window.removeEventListener('resize', handleResize);
     };
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('email');
+    localStorage.clear();
     navigate('/LoginPage');
   };
 
   return (
     <>
-      {/* Three.js background */}
-      <Box ref={mountRef} sx={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 0 }} />
+      {/* Star background */}
+      <Box ref={mountRef} sx={{ position: 'fixed', inset: 0, zIndex: 0 }} />
 
-      {/* Side Panel */}
-      <Box
+      {/* Logout */}
+      <Button
+        variant="contained"
+        color="error"
+        onClick={handleLogout}
         sx={{
           position: 'fixed',
-          top: 40,
-          right: 40,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 15,
-          backgroundColor: 'rgba(10,12,35,0.8)',
-          borderRadius: 2,
-          padding: 2,
-          zIndex: 2,
-          minWidth: 200,
-          alignItems: 'flex-start',
+          top: 25,
+          right: 25,
+          zIndex: 3,
+          borderRadius: 5,
+          px: 3,
         }}
       >
-        <Typography variant="h6" sx={{ color: '#fff', wordBreak: 'break-word' }}>
-          Welcome, {email}
-        </Typography>
-        <Button variant="contained" color="error" onClick={handleLogout}>
-          Logout
-        </Button>
-      </Box>
+        Logout
+      </Button>
 
-      {/* Boxes centered */}
+      {/* Center heading */}
       <Box
         sx={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)', // perfect center
+          position: 'relative',
+          zIndex: 2,
+          textAlign: 'center',
+          mt: 10,
+          color: '#fff',
+        }}
+      >
+        <Typography variant="h3" fontWeight="bold">
+          Hello, {email}
+        </Typography>
+        <Typography variant="h5" sx={{ mt: 1 }}>
+          Welcome to your Mental Capacity Monitor
+        </Typography>
+        <Typography
+          variant="body1"
+          sx={{ mt: 2, maxWidth: 650, mx: 'auto', opacity: 0.9 }}
+        >
+          Instead of predicting marks, let’s predict and protect your mental energy.
+        </Typography>
+      </Box>
+
+      {/* Dashboard cards */}
+      <Box
+        sx={{
+          mt: 8,
           display: 'grid',
-          gridTemplateColumns: 'repeat(2, 250px)',
-          gridTemplateRows: 'repeat(2, 200px)',
-          gap: 25,
-          zIndex: 1,
+          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+          gap: 5,
+          px: 6,
+          zIndex: 2,
+          position: 'relative',
         }}
       >
         {dashboardOptions.map((option, index) => (
@@ -129,31 +182,36 @@ const LoadDashboard = () => {
             key={index}
             sx={{
               backgroundColor: option.color,
-              borderRadius: 3,
-              p: 3,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
+              borderRadius: 6,
+              p: 4,
+              textAlign: 'center',
               color: '#fff',
-              boxShadow: '0 0 25px rgba(0,0,0,0.3)',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+              transition: 'transform 0.3s',
+              cursor: 'pointer',
+              '&:hover': { transform: 'translateY(-8px)' },
             }}
+            onClick={() => navigate(option.link, { state: { email } })}
           >
-            <Typography variant="h5">{option.title}</Typography>
-            <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-              {option.description}
+            <img
+              src={option.image}
+              alt={option.title}
+              style={{ width: 70, marginBottom: 20 }}
+            />
+            <Typography variant="h5" fontWeight="bold">
+              {option.title}
             </Typography>
+            <Typography sx={{ mt: 1, opacity: 0.95 }}>{option.description}</Typography>
             <Button
               sx={{
-                mt: 2,
+                mt: 3,
                 backgroundColor: '#fff',
                 color: option.color,
                 fontWeight: 'bold',
-                '&:hover': { backgroundColor: '#eee' },
+                borderRadius: 5,
+                px: 4,
+                '&:hover': { backgroundColor: '#f2f2f2' },
               }}
-              onClick={() => {
-  navigate(option.link, { state: { email } });
-}}
-
             >
               Access
             </Button>
