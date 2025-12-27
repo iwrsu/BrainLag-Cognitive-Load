@@ -11,23 +11,29 @@ import {
 } from "@mui/material";
 import * as THREE from "three";
 import axios from "axios";
-import { useLocation } from 'react-router-dom';
-const subjects = ["Coding", "Math", "Reading", "Science", "Other"];
+import { useLocation,useNavigate } from "react-router-dom";
+
+const subjects = [
+  { label: "Coding", icon: "💻" },
+  { label: "Math", icon: "📐" },
+  { label: "Reading", icon: "📚" },
+  { label: "Science", icon: "🔬" },
+  { label: "Other", icon: "📝" },
+];
 
 export default function LoadInputForm() {
   const mountRef = useRef(null);
-const location = useLocation();
-  const [email, setEmail] = useState('');
+  const location = useLocation();
+  const [email, setEmail] = useState("");
 
   useEffect(() => {
-    // email comes from navigation state
     if (location.state?.email) {
       setEmail(location.state.email);
     } else {
-      // fallback: maybe localStorage if you saved it there
-      setEmail(localStorage.getItem('email') || '');
+      setEmail(localStorage.getItem("email") || "");
     }
   }, [location.state]);
+
   const [formData, setFormData] = useState({
     total_time: "",
     num_sessions: "",
@@ -40,8 +46,9 @@ const location = useLocation();
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  /* ================= THREE.JS STAR BACKGROUND ================= */
+  const [showForm, setShowForm] = useState(true);
+const navigate=useNavigate();
+  // ================== THREE.JS STAR BACKGROUND ==================
   useEffect(() => {
     if (!mountRef.current) return;
     let mounted = true;
@@ -110,7 +117,6 @@ const location = useLocation();
     };
   }, []);
 
-  /* ================= HANDLERS ================= */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((p) => ({ ...p, [name]: value }));
@@ -120,12 +126,10 @@ const location = useLocation();
     setFormData((p) => ({ ...p, [name]: value }));
   };
 
-  /* ================= SUBMIT WITH VALIDATION ================= */
   const handleSubmit = async () => {
     setError("");
     setResult(null);
 
-    // Frontend validation
     if (!formData.total_time || !formData.num_sessions || !formData.subject) {
       setError("Please fill all required fields.");
       return;
@@ -156,6 +160,7 @@ const location = useLocation();
       );
 
       setResult(res.data);
+      setShowForm(false);
     } catch (err) {
       console.error(err.response?.data || err.message);
       setResult({ message: "Error connecting to server" });
@@ -164,13 +169,27 @@ const location = useLocation();
     }
   };
 
+  const handleResetForm = () => {
+    setFormData({
+      total_time: "",
+      num_sessions: "",
+      subject: "Coding",
+      focus: 3,
+      fatigue: 3,
+      late_night: 0,
+    });
+    setResult(null);
+    setError("");
+    setShowForm(true);
+  };
+
   const fieldStyle = {
     mb: 2,
     input: { color: "#fff" },
-    label: { color: "#bbb" },
+    label: { color: "#bbb", fontWeight: "bold" },
     "& .MuiOutlinedInput-root": {
       "& fieldset": { borderColor: "#666" },
-      "&:hover fieldset": { borderColor: "#fff" },
+      "&:hover fieldset": { borderColor: "#9c8cff" },
       "&.Mui-focused fieldset": { borderColor: "#9c8cff" },
     },
   };
@@ -189,170 +208,219 @@ const location = useLocation();
           p: 2,
         }}
       >
-        {/* STAR BACKGROUND */}
-        <div
-          ref={mountRef}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 0,
-          }}
-        />
+        {/* Star background */}
+        <div ref={mountRef} style={{ position: "fixed", inset: 0, zIndex: 0 }} />
 
-        {/* CONTAINER: FORM LEFT, RESULT RIGHT */}
+        {/* Form container */}
         <Box
           sx={{
             position: "relative",
             zIndex: 1,
             display: "flex",
             flexDirection: { xs: "column", md: "row" },
-            gap: 3,
-            background: "rgba(10,12,35,0.88)",
-            borderRadius: 3,
-            backdropFilter: "blur(12px)",
-            boxShadow: "0 0 40px rgba(160,140,255,0.45)",
-            p: 4,
+            gap: 4,
+            background: "rgba(10,12,35,0.9)",
+            borderRadius: 4,
+            backdropFilter: "blur(15px)",
+            boxShadow: "0 0 50px rgba(156,140,255,0.45)",
+            p: 5,
             maxWidth: "900px",
             width: "100%",
           }}
         >
-          {/* LEFT PANEL: FORM */}
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="h5" align="center" color="white" gutterBottom>
-              Mental Load Input 
-            </Typography>
-
-            <TextField
-              label="Total Study Time (minutes)"
-              name="total_time"
-              type="number"
-              value={formData.total_time}
-              onChange={handleChange}
-              fullWidth
-              sx={fieldStyle}
-            />
-
-            <TextField
-              label="Number of Sessions"
-              name="num_sessions"
-              type="number"
-              value={formData.num_sessions}
-              onChange={handleChange}
-              fullWidth
-              sx={fieldStyle}
-            />
-
-            <TextField
-              select
-              label="Subject"
-              name="subject"
-              value={formData.subject}
-              onChange={handleChange}
-              fullWidth
-              sx={{
-                ...fieldStyle,
-                "& .MuiSelect-select": { color: "#fff" },
-              }}
-              SelectProps={{
-                MenuProps: {
-                  PaperProps: {
-                    sx: { bgcolor: "#0b0f2a", color: "#fff" },
-                  },
-                },
-              }}
-            >
-              {subjects.map((s) => (
-                <MenuItem key={s} value={s} sx={{ color: "#fff" }}>
-                  {s}
-                </MenuItem>
-              ))}
-            </TextField>
-
-            <Typography color="white">Focus (1–5)</Typography>
-            <Slider
-              value={formData.focus}
-              min={1}
-              max={5}
-              step={1}
-              onChange={handleSlider("focus")}
-              sx={{ color: "#9c8cff" }}
-            />
-
-            <Typography color="white">Fatigue (1–5)</Typography>
-            <Slider
-              value={formData.fatigue}
-              min={1}
-              max={5}
-              step={1}
-              onChange={handleSlider("fatigue")}
-              sx={{ color: "#9c8cff" }}
-            />
-
-            <Typography color="white">Late Night Study</Typography>
-            <Slider
-              value={formData.late_night}
-              min={0}
-              max={1}
-              step={1}
-              onChange={handleSlider("late_night")}
-              sx={{ color: "#9c8cff" }}
-            />
-
-            {error && (
-              <Typography color="error" sx={{ mb: 2, mt: 1 }}>
-                {error}
-              </Typography>
-            )}
-
-            <Button
-              variant="contained"
-              fullWidth
-              sx={{ mt: 1 }}
-              onClick={handleSubmit}
-              disabled={loading}
-            >
-              {loading ? "Checking..." : "Submit"}
-            </Button>
-          </Box>
-
-          {/* RIGHT PANEL: RESULT */}
-          <Box
-            sx={{
-              flex: 1,
-              background: "rgba(0,0,50,0.6)",
-              borderRadius: 2,
-              p: 2,
-              color: "#fff",
-              minHeight: "300px",
-            }}
-          >
-            <Typography variant="h6" gutterBottom>
-              Result
-            </Typography>
-            {result ? (
-              <Alert
-                severity={
-                  result.status === "low"
-                    ? "success"
-                    : result.status === "medium"
-                    ? "warning"
-                    : "error"
-                }
+          {showForm && (
+            <Box sx={{ flex: 1 }}>
+              <Typography
+                variant="h4"
+                align="center"
+                color="#fff"
+                gutterBottom
+                sx={{ mb: 4 }}
               >
-                <Typography variant="subtitle1">
-                  {result.message || "No result"}
+                🧠 Mental Load Input
+              </Typography>
+
+              {/* Total Time */}
+              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                <Typography sx={{ fontSize: "1.5rem", mr: 1 }}>⏱️</Typography>
+                <TextField
+                  label="Total Study Time (minutes)"
+                  name="total_time"
+                  type="number"
+                  value={formData.total_time}
+                  onChange={handleChange}
+                  fullWidth
+                  sx={fieldStyle}
+                />
+              </Box>
+
+              {/* Number of Sessions */}
+              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                <Typography sx={{ fontSize: "1.5rem", mr: 1 }}>📊</Typography>
+                <TextField
+                  label="Number of Sessions"
+                  name="num_sessions"
+                  type="number"
+                  value={formData.num_sessions}
+                  onChange={handleChange}
+                  fullWidth
+                  sx={fieldStyle}
+                />
+              </Box>
+
+              {/* Subject */}
+              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                <Typography sx={{ fontSize: "1.5rem", mr: 1 }}>
+                  {subjects.find((s) => s.label === formData.subject)?.icon || "📘"}
                 </Typography>
-                {result.recommendation && (
-                  <Typography>{result.recommendation}</Typography>
-                )}
-                {result.load_score && (
-                  <Typography>Score: {result.load_score}</Typography>
-                )}
-              </Alert>
-            ) : (
-              <Typography>Submit the form to see result</Typography>
-            )}
-          </Box>
+                <TextField
+                  select
+                  label="Subject"
+                  name="subject"
+                  value={formData.subject}
+                  onChange={handleChange}
+                  fullWidth
+                  sx={{ ...fieldStyle, "& .MuiSelect-select": { color: "#fff" } }}
+                  SelectProps={{
+                    MenuProps: {
+                      PaperProps: { sx: { bgcolor: "#0b0f2a", color: "#fff" } },
+                    },
+                  }}
+                >
+                  {subjects.map((s) => (
+                    <MenuItem key={s.label} value={s.label} sx={{ color: "#fff" }}>
+                      {s.icon} {s.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Box>
+
+              {/* Focus */}
+              <Typography color="#fff" sx={{ mt: 2 }}>
+                🎯 Focus (1–5)
+              </Typography>
+              <Slider
+                value={formData.focus}
+                min={1}
+                max={5}
+                step={1}
+                onChange={handleSlider("focus")}
+                sx={{ color: "#9c8cff", mb: 2 }}
+              />
+
+              {/* Fatigue */}
+              <Typography color="#fff">😴 Fatigue (1–5)</Typography>
+              <Slider
+                value={formData.fatigue}
+                min={1}
+                max={5}
+                step={1}
+                onChange={handleSlider("fatigue")}
+                sx={{ color: "#9c8cff", mb: 2 }}
+              />
+
+              {/* Late night */}
+              <Typography color="#fff" sx={{ mt: 2, mb: 1 }}>
+                🌙 Late Night Study
+              </Typography>
+              <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+                <Button
+                  variant={formData.late_night === 1 ? "contained" : "outlined"}
+                  color="primary"
+                  onClick={() => setFormData((p) => ({ ...p, late_night: 1 }))}
+                  sx={{ flex: 1, fontSize: "1rem", height: "36px" }}
+                >
+                  {formData.late_night === 1 ? "✔ Yes" : "Yes"}
+                </Button>
+                <Button
+                  variant={formData.late_night === 0 ? "contained" : "outlined"}
+                  color="primary"
+                  onClick={() => setFormData((p) => ({ ...p, late_night: 0 }))}
+                  sx={{ flex: 1, fontSize: "1rem", height: "36px" }}
+                >
+                  {formData.late_night === 0 ? "✔ No" : "No"}
+                </Button>
+              </Box>
+
+              {error && (
+                <Typography color="error" sx={{ mb: 2 }}>
+                  {error}
+                </Typography>
+              )}
+
+              <Button
+                variant="contained"
+                fullWidth
+                sx={{ mt: 1, fontWeight: "bold" }}
+                onClick={handleSubmit}
+                disabled={loading}
+              >
+                {loading ? "Checking..." : "Submit"}
+              </Button>
+            </Box>
+          )}
+
+          {!showForm && (
+  <Box
+    sx={{
+      flex: 1,
+      background: "rgba(0,0,50,0.6)",
+      borderRadius: 3,
+      p: 3,
+      color: "#fff",
+      minHeight: "300px",
+    }}
+  >
+    <Typography variant="h5" gutterBottom>
+      📝 Result
+    </Typography>
+    {result ? (
+      <>
+        <Alert
+          severity={
+            result.status === "low"
+              ? "success"
+              : result.status === "medium"
+              ? "warning"
+              : "error"
+          }
+        >
+          <Typography variant="subtitle1">
+            {result.message || "No result"}
+          </Typography>
+          {result.recommendation && (
+            <Typography>{result.recommendation}</Typography>
+          )}
+          {result.load_score && (
+            <Typography>Score: {result.load_score}</Typography>
+          )}
+        </Alert>
+
+        <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            onClick={handleResetForm}
+          >
+            Submit Another Form
+          </Button>
+          <Button
+            variant="outlined"
+            color="secondary"
+            fullWidth
+            onClick={() => navigate("/TrackDaily", { state: { email } })}
+          >
+            View Insights
+          </Button>
+        </Box>
+      </>
+    ) : (
+      <Typography>Submit the form to see result</Typography>
+    )}
+  </Box>
+)}
+
         </Box>
       </Box>
     </>
